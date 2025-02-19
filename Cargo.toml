@@ -7,15 +7,12 @@ edition = "2024"
 env_logger = "0.11.6"
 log = "0.4.25"
 wgpu = "24.0.1"
+cfg-if = "1"
 winit = "0.29"
-
+pollster = "0.3"
 # This should go in the Cargo.toml in the root directory
 [profile.release]
 strip = true
-
-[dependencies]
-cfg-if = "1"
-# the other regular dependencies...
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.6"
