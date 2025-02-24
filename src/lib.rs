@@ -12,6 +12,8 @@ pub struct State<'a> {
     pub size: winit::dpi::PhysicalSize<u32>,
     pub window: &'a Window,
     pub render_pipeline: wgpu::RenderPipeline,
+    pub render_pipeline_2: wgpu::RenderPipeline,
+    pub background_color: [f64; 4],
 }
 
 impl<'a> State<'a> {
@@ -120,6 +122,43 @@ impl<'a> State<'a> {
             multiview: None,
             cache: None,
         });
+        let render_pipeline_2 = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Render Pipeline"),
+            layout: Some(&render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main_2"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                buffers: &[],
+            },
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back),
+                unclipped_depth: false,
+                polygon_mode: wgpu::PolygonMode::Fill,
+                conservative: false,
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some("fs_main_2"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            multiview: None,
+            cache: None,
+        });
         Self {
             surface,
             device,
@@ -128,6 +167,8 @@ impl<'a> State<'a> {
             size,
             window,
             render_pipeline,
+            render_pipeline_2,
+            background_color: [0.1, 0.2, 0.3, 1.0],
         }
     }
 
@@ -168,10 +209,10 @@ impl<'a> State<'a> {
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
+                            r: self.background_color[0],
+                            g: self.background_color[1],
+                            b: self.background_color[2],
+                            a: self.background_color[3],
                         }),
                         store: wgpu::StoreOp::Store,
                     },
