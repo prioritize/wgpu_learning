@@ -1,3 +1,4 @@
+use wgpu::util::DeviceExt;
 use wgpu::util::RenderEncoder;
 use winit::dpi::PhysicalSize;
 // lib.rs
@@ -12,10 +13,30 @@ pub struct State<'a> {
     pub size: winit::dpi::PhysicalSize<u32>,
     pub window: &'a Window,
     pub render_pipeline: wgpu::RenderPipeline,
-    pub render_pipeline_2: wgpu::RenderPipeline,
+    pub vertex_buffer: wgpu::Buffer,
     pub background_color: [f64; 4],
 }
 
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+struct Vertex {
+    position: [f32; 3],
+    color: [f32; 3],
+}
+const VERTICES: &[Vertex] = &[
+    Vertex {
+        position: [0.0, 0.5, 0.0],
+        color: [1.0, 0.0, 0.0],
+    },
+    Vertex {
+        position: [-0.5, -0.5, 0.0],
+        color: [0.0, 1.0, 0.0],
+    },
+    Vertex {
+        position: [0.5, -0.5, 0.0],
+        color: [0.0, 0.0, 1.0],
+    },
+];
 impl<'a> State<'a> {
     // Creating some of the wgpu types requires async code
     pub async fn new(window: &'a Window) -> State<'a> {
@@ -122,42 +143,10 @@ impl<'a> State<'a> {
             multiview: None,
             cache: None,
         });
-        let render_pipeline_2 = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
-            layout: Some(&render_pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: Some("vs_main_2"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                buffers: &[],
-            },
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
-                unclipped_depth: false,
-                polygon_mode: wgpu::PolygonMode::Fill,
-                conservative: false,
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: Some("fs_main_2"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: config.format,
-                    blend: Some(wgpu::BlendState::REPLACE),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            multiview: None,
-            cache: None,
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(VERTICES),
+            usage: wgpu::BufferUsages::VERTEX,
         });
         Self {
             surface,
@@ -167,7 +156,7 @@ impl<'a> State<'a> {
             size,
             window,
             render_pipeline,
-            render_pipeline_2,
+            vertex_buffer: vertex_buffer,
             background_color: [0.1, 0.2, 0.3, 1.0],
         }
     }
